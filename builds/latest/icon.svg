@@ -1,15 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#F7F3EB" />
-  <rect x="28" y="28" width="456" height="456" rx="92" fill="#FFFDF9" stroke="#E3DAC8" stroke-width="8" />
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="48%" r="55%">
+      <stop offset="0%" stop-color="#4A2715" />
+      <stop offset="100%" stop-color="#211008" />
+    </radialGradient>
+    <linearGradient id="copper" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2B17A" />
+      <stop offset="100%" stop-color="#C66B33" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#bgGlow)" />
+  <!-- Aroma & Copper Droplet -->
+  <path d="M256 106c-20 26-30 42-30 56a30 30 0 0 0 60 0c0-14-10-30-30-56z" fill="url(#copper)" />
+  <path d="M300 174c14-16 14-34 2-52 22 14 26 36 8 56z" fill="#D48148" opacity="0.85" />
   <!-- V60 Cone -->
-  <path d="M138 156h236l-82 146h-72L138 156z" fill="#8C4A27" />
-  <path d="M168 176h176l-58 104h-60L168 176z" fill="#F7F3EB" opacity="0.22" />
-  <!-- Server / Base -->
-  <rect x="196" y="302" width="120" height="18" rx="9" fill="#241A13" />
-  <path d="M174 334h164l20 48c6 14-4 28-20 28H174c-16 0-26-14-20-28l20-48z" fill="#241A13" />
-  <path d="M190 364h132l12 28H178l12-28z" fill="#8C4A27" />
-  <!-- Steam -->
-  <path d="M214 126c0-16 14-20 14-36" fill="none" stroke="#8C4A27" stroke-width="12" stroke-linecap="round" />
-  <path d="M256 118c0-18 14-22 14-38" fill="none" stroke="#2E6F4E" stroke-width="12" stroke-linecap="round" />
-  <path d="M298 126c0-16 14-20 14-36" fill="none" stroke="#8C4A27" stroke-width="12" stroke-linecap="round" />
+  <path d="M168 198h176l-52 94h-72l-52-94z" fill="#F5ECE2" />
+  <path d="M196 206l24 80M232 206l10 80M280 206l-10 80M316 206l-24 80" stroke="#211008" stroke-width="10" stroke-linecap="round" />
+  <!-- Dripper Collar & Handle -->
+  <rect x="178" y="294" width="156" height="18" rx="9" fill="url(#copper)" />
+  <path d="M334 214c22 0 32 14 32 30 0 18-16 32-40 34" fill="none" stroke="url(#copper)" stroke-width="14" stroke-linecap="round" />
+  <!-- Glass Carafe Server -->
+  <path d="M204 316h104l34 78c6 14-2 26-18 26H188c-16 0-24-12-18-26l34-78z" fill="#2B160C" stroke="#F5ECE2" stroke-width="14" stroke-linejoin="round" />
+  <path d="M194 374h124l12 28H182l12-28z" fill="#8C4A27" opacity="0.9" />
+  <path d="M322 328h32c10 0 16 6 20 18l16 50" fill="none" stroke="url(#copper)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

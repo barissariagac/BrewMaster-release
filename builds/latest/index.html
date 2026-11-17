@@ -8,7 +8,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="BrewMaster" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <title>BrewMaster SCA Pro — Specialty Coffee Lab</title>
     <meta name="description" content="SCA standartlarında 110+ nitelikli kahve çekirdeği, 12 işleme yöntemi, 25 değirmen için 1:1 gerçek boyutlu mikron/klik kalibrasyonu, 15 doğrulanmış dünya şampiyonu reçetesi ve canlı demleme asistanı." />
@@ -17,10 +18,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/assets/index-GcpzqJ00.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DF6PymEo.css">
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('brewmaster_theme_v1');
+          var theme = saved === 'coffee-light' || saved === 'coffee-dark' ? saved : 'cream';
+          document.documentElement.setAttribute('data-theme', theme);
+          if (theme === 'coffee-dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) {
+            meta.setAttribute(
+              'content',
+              theme === 'coffee-dark' ? '#16100C' : theme === 'coffee-light' ? '#EDE0CE' : '#F7F3EB'
+            );
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-CKv_gQz7.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/icons-5crm2t-6.js">
+    <link rel="modulepreload" crossorigin href="/assets/react-Ciu3yRDJ.js">
+    <link rel="modulepreload" crossorigin href="/assets/firebase-D3Vyo3fM.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CcDdQrzr.css">
   <link rel="manifest" href="/manifest.webmanifest"></head>
-  <body class="bg-[#F7F3EB] text-[#241A13] antialiased selection:bg-[#8C4A27]/15 selection:text-[#8C4A27]">
+  <body class="bg-bm-bg text-bm-text antialiased selection:bg-bm-accent/15 selection:text-bm-accent-text">
     <div id="root"></div>
   </body>
 </html>
