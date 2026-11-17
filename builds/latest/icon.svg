@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#F7F3EB" />
+  <rect x="28" y="28" width="456" height="456" rx="92" fill="#FFFDF9" stroke="#E3DAC8" stroke-width="8" />
+  <!-- V60 Cone -->
+  <path d="M138 156h236l-82 146h-72L138 156z" fill="#8C4A27" />
+  <path d="M168 176h176l-58 104h-60L168 176z" fill="#F7F3EB" opacity="0.22" />
+  <!-- Server / Base -->
+  <rect x="196" y="302" width="120" height="18" rx="9" fill="#241A13" />
+  <path d="M174 334h164l20 48c6 14-4 28-20 28H174c-16 0-26-14-20-28l20-48z" fill="#241A13" />
+  <path d="M190 364h132l12 28H178l12-28z" fill="#8C4A27" />
+  <!-- Steam -->
+  <path d="M214 126c0-16 14-20 14-36" fill="none" stroke="#8C4A27" stroke-width="12" stroke-linecap="round" />
+  <path d="M256 118c0-18 14-22 14-38" fill="none" stroke="#2E6F4E" stroke-width="12" stroke-linecap="round" />
+  <path d="M298 126c0-16 14-20 14-36" fill="none" stroke="#8C4A27" stroke-width="12" stroke-linecap="round" />
+</svg>

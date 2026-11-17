@@ -1,0 +1,16 @@
+{
+  "appName": "BrewMaster SCA Pro",
+  "version": "2.0.0",
+  "buildNumber": 6,
+  "commitSha": "80a5379",
+  "builtAt": "2026-11-17T12:54:49.637Z",
+  "repo": "barissariagac/BrewMaster-release",
+  "branch": "main",
+  "zipFileName": "brewmaster-v2.0.0.zip",
+  "latestZipName": "brewmaster-latest.zip",
+  "downloadUrl": "https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/brewmaster-latest.zip",
+  "versionedDownloadUrl": "https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/brewmaster-v2.0.0.zip",
+  "buildsFolderUrl": "https://github.com/barissariagac/BrewMaster-release/tree/main/builds",
+  "releasesUrl": "https://github.com/barissariagac/BrewMaster-release/releases",
+  "notes": "brewmaster-sca-pro v2.0.0 (80a5379) üretim derlemesi."
+}
