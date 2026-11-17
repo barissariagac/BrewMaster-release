@@ -2,10 +2,10 @@
   "appName": "BrewMaster SCA Pro",
   "packageId": "com.brewmaster.scapro",
   "version": "2.0.0",
-  "versionCode": 9,
-  "buildNumber": 9,
-  "commitSha": "9589af5",
-  "builtAt": "2026-11-17T16:28:39.245Z",
+  "versionCode": 10,
+  "buildNumber": 10,
+  "commitSha": "0ec565e",
+  "builtAt": "2026-11-17T17:48:14.229Z",
   "repo": "barissariagac/BrewMaster-release",
   "branch": "main",
   "apkFileName": "brewmaster-v2.0.0.apk",
@@ -15,5 +15,5 @@
   "apkDownloadUrl": "https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/brewmaster-latest.apk",
   "buildsFolderUrl": "https://github.com/barissariagac/BrewMaster-release/tree/main/builds",
   "releasesUrl": "https://github.com/barissariagac/BrewMaster-release/releases",
-  "notes": "brewmaster-sca-pro v2.0.0 (9589af5) Android APK derlemesi."
+  "notes": "brewmaster-sca-pro v2.0.0 (0ec565e) Android APK derlemesi."
 }
