@@ -1,8 +1,9 @@
-# BrewMaster SCA Pro — Public Builds & Releases
+# BrewMaster SCA Pro — Android APK & Releases
 
-Bu depo yalnızca **BrewMaster SCA Pro** uygulamasının derlenmiş üretim paketlerini (`builds/`) ve otomatik güncelleme manifestini (`builds/version.json`) içerir; kaynak kod özel geliştirme deposunda tutulur.
+Bu depo **BrewMaster SCA Pro** uygulamasının derlenmiş Android APK paketlerini (`builds/`) ve otomatik güncelleme manifestini (`builds/version.json`) içerir; kaynak kod özel geliştirme deposunda tutulur.
 
-- **Son Sürüm:** v2.0.0 (Build #6)
-- **Doğrudan İndirme (.zip):** [brewmaster-latest.zip](https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/brewmaster-latest.zip)
+- **Son Sürüm:** v2.0.0 (Build #7)
+- **Android APK İndir (Son Sürüm):** [brewmaster-latest.apk](https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/brewmaster-latest.apk)
+- **Versiyonlu APK:** [brewmaster-v2.0.0.apk](https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/brewmaster-v2.0.0.apk)
 - **Sürüm Manifesti:** [builds/version.json](https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/version.json)
-- **Derlenmiş Dosyalar:** [builds/latest/](https://github.com/barissariagac/BrewMaster-release/tree/main/builds/latest)
+- **Tüm Sürümler (Releases):** [GitHub Releases](https://github.com/barissariagac/BrewMaster-release/releases)
