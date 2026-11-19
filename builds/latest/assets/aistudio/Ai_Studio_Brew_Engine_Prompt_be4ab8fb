@@ -1,0 +1,202 @@
+# Google AI Studio — Hazır Uygulama Motoru & DB Optimizasyon Promptu
+
+Aşağıdaki metni doğrudan kopyalayıp **Google AI Studio**'ya yapıştırarak mevcut `constants.ts`, `origins.json`, `equipment.json`, `recipes.json`, `grinders.json` ve `grinder_matrix.json` veritabanınızla birebir uyumlu karar motorunu ve gerekli veri düzeltmelerini tek seferde ürettirebilirsiniz.
+
+---
+
+## KOPYALANACAK PROMPT BAŞLANGICI
+
+Sen kıdemli bir TypeScript/React Native (veya Flutter/Web) mimarı ve SCA (Specialty Coffee Association) & UC Davis Coffee Center ekstraksiyon bilimi uzmanısın.
+
+Mevcut projemde şu veri dosyaları hazır durumda bulunuyor:
+- `src/data/constants.ts` (`ROAST_LEVELS`, `PROCESS_METHODS`, `FLAVOR_NOTES`, `COFFEE_ORIGINS`, `BREWING_EQUIPMENTS`, `GRINDER_SPECS`, `CHAMPION_RECIPES`, `REFERENCE_GRIND_MATRIX`)
+- `src/data/origins.json` (110 çekirdek lotu: `id`, `country`, `name`, `altitude`, `varietals`, `defaultProcess`, `defaultRoast`, `defaultNotes`)
+- `src/data/equipment.json` (19 ekipman: `id`, `category`, `referenceZone`, `acidity`, `sweetness`, `body`, `clarity`)
+- `src/data/recipes.json` (13 şampiyon/SCA reçetesi: `id`, `supportedEquipmentIds`, `primaryEquipmentId`, `referenceZoneOverride`, `baseCoffeeGrams`, `baseWaterGrams`, `baseWaterTempC`, `acidity`, `sweetness`, `body`, `clarity`, `steps`)
+- `src/data/grinders.json` ve `src/data/grinder_matrix.json`
+
+Benden istenen görev: Mevcut veritabanımla **%100 uyumlu**, **sıfır TODO** içeren, **UC Davis & SCA (25, Issue 13 — Towards a New Brewing Chart) RSM (Response Surface Methodology)** bulgularına ve **SCA Agtron Gourmet (35–88)** ölçeğine dayalı bir **Birleşik Ekipman–Reçete–Öğütüm Öneri Motoru (`src/engine/brewRecommendationEngine.ts`)** yazmak ve aşağıda tespit edilen veri/tip iyileştirmelerini `constants.ts` ve `types/coffee.ts` içine temizce eklemek.
+
+---
+
+### 1. FONKSİYON İMZASI (GİRDİLER VE ÇIKTILAR)
+
+```typescript
+export interface RecommendationInput {
+  originId: string;                 // origins.json -> CoffeeOrigin.id (Çekirdeğin yöresi/lotu)
+  processId: ProcessMethodId;       // constants.ts -> 12 işleme yönteminden biri
+  roastId: RoastLevelId;            // 'light' | 'light_medium' | 'medium' | 'medium_dark' | 'dark'
+  // Opsiyonel ince ayarlar (boş bırakılırsa otomatik varsayılanlar devreye girer):
+  exactAgtronGround?: number;       // 35–88 arası kesin Agtron Ground değeri (girilmezse bandın orta noktası)
+  exactAgtronWhole?: number;        // Opsiyonel Whole Bean Agtron (Delta gelişim kontrolü için)
+  grinderId?: string;               // Varsayılan: 'eureka_mignon_filtro' (veya GRINDER_SPECS[0])
+  doseGrams?: number;               // Varsayılan: seçilen reçetenin baseCoffeeGrams değeri
+  daysPostRoast?: number;           // Varsayılan: 10 (Blooming süresi kalibrasyonu için)
+  allowedCategories?: EquipmentCategory[]; // Opsiyonel kategori filtresi (örn. sadece pour-over)
+}
+
+export interface BrewRecommendationResult {
+  // 1. Ana Öneri (En yüksek Ekipman × Reçete korelasyon skoru)
+  recommendedEquipment: BrewingEquipment;
+  recommendedRecipe: BrewRecipe;
+  correlationScore: number;         // 50 – 99 (%)
+  rationaleSummary: string;         // Türkçe, kullanıcıya anlaşılır 2 cümlelik bilimsel gerekçe
+
+  // 2. Alternatif İlk 3 (Ekipman × Reçete) Çifti
+  topAlternatives: Array<{
+    equipment: BrewingEquipment;
+    recipe: BrewRecipe;
+    score: number;
+  }>;
+
+  // 3. Hesaplanan Öğütüm Kalınlığı ve Değirmen Ayarı
+  grind: {
+    effectiveZone: string;          // recipe.referenceZoneOverride ?? equipment.referenceZone
+    baseMicron: number;
+    finalMicron: number;            // Tüm düzeltmeler sonrası nihai mikron (µm)
+    micronBreakdown: {
+      solubilityDelta: number;      // (S_bean - 0.5) * 110
+      varietalDelta: number;        // Etiyopya Heirloom +25µm, Pacamara -15µm
+      doseDelta: number;            // (dose - 18) * 6µm
+      burrDelta: number;            // Flat burr (Eureka/Ode/EK43): -20µm, Conical: 0µm
+    };
+    grinderName: string;
+    grinderSettingLabel: string;    // Örn: "2.9 Kadran (1. Tur)" veya "22 Klik"
+    visualReference: string;        // Örn: "İnce Deniz Tuzu / Toz Şeker"
+  };
+
+  // 4. Kalibre Edilmiş Reçete Parametreleri (Ölçeklenmiş adımlarla)
+  calibratedRecipe: {
+    coffeeGrams: number;
+    totalWaterGrams: number;
+    ratioLabel: string;             // Örn: "1:16.8"
+    waterTempC: number;             // 85.0 – 97.0 °C (veya Türk Kahvesi/Cold Brew istisnası)
+    bloomDurationSec: number;       // Tazeliğe göre 30 / 35 / 45 sn
+    agitationLevel: 'high' | 'balanced' | 'low';
+    scaledSteps: BrewRecipeStep[];  // doseGrams ve totalWaterGrams'a göre orantısal güncellenmiş adımlar
+  };
+
+  // 5. Bilimsel & UC Davis RSM Analiz Çıktıları
+  scienceMeta: {
+    agtronUsed: number;
+    roastSolubilityR: number;       // 0.0 – 1.0
+    processSolubilityP: number;     // 0.15 – 1.0
+    altitudeDensityD: number;       // 0.10 – 1.0
+    compositeSolubilityS: number;   // 0.45R + 0.35P + 0.20(1-D)
+    targetSensoryVector: { acidity: number; sweetness: number; body: number; clarity: number };
+    rsmTargetZone: {
+      targetPE: string;             // Örn: "%20.0 – %21.2"
+      targetTDS: string;            // Örn: "%1.18 – %1.26"
+      quadrantNote: string;         // UC Davis RSM yönelimi (Örn: "Sol-Alt Doğal Tatlılık Odaklı")
+    };
+  };
+}
+```
+
+---
+
+### 2. MEVCUT VERİTABANINDA YAPILACAK ZORUNLU DÜZELTMELER
+
+Mevcut dosyalarımda şu 4 kritik eksikliği gider:
+
+1. **`ROAST_LEVELS` (`constants.ts`) içine sayısal Agtron alanları ekle:**
+   - `light`: `agtronMin: 75, agtronMax: 88, agtronMid: 81.5`
+   - `light_medium`: `agtronMin: 65, agtronMax: 74, agtronMid: 69.5`
+   - `medium`: `agtronMin: 55, agtronMax: 64, agtronMid: 59.5`
+   - `medium_dark`: `agtronMin: 45, agtronMax: 54, agtronMid: 49.5`
+   - `dark`: `agtronMin: 35, agtronMax: 44, agtronMid: 39.5`
+
+2. **`PROCESS_METHODS` (`constants.ts`) içine tüm 12 işleme yöntemi için `solubility` ve `sensoryVector` (`[acidity, sweetness, body, clarity]`) ekle:**
+   - `washed`: `sol: 0.15`, `[8.5, 6.5, 4.0, 9.5]`
+   - `honey`: `sol: 0.48`, `[6.8, 8.6, 6.5, 7.2]`
+   - `natural`: `sol: 0.70`, `[6.2, 9.2, 8.2, 5.2]`
+   - `wet_hulled`: `sol: 0.75`, `[4.0, 6.8, 9.5, 3.5]`
+   - `monsooned`: `sol: 0.85`, `[1.5, 6.5, 9.8, 2.8]`
+   - `lactic`: `sol: 0.85`, `[7.2, 9.2, 8.2, 6.0]`
+   - `yeast_inoculated`: `sol: 0.90`, `[8.6, 8.8, 6.2, 7.8]`
+   - `anaerobic`: `sol: 0.92`, `[7.8, 8.8, 8.0, 5.5]`
+   - `carbonic_maceration`: `sol: 0.95`, `[8.0, 9.0, 7.6, 6.2]`
+   - `co_fermented`: `sol: 0.96`, `[8.0, 9.3, 7.8, 5.6]`
+   - `thermal_shock`: `sol: 0.98`, `[8.2, 9.2, 7.4, 6.5]`
+   - `koji`: `sol: 1.00`, `[7.0, 9.4, 8.0, 5.8]`
+
+3. **`equipment.json` Puan Sıkışması (Score Compression) Düzeltmesi:**
+   - `equipment.json` içinde `orea_v3_v4` (`8.8/9.7/8.4/9.1`) ve `hario_switch` (`8.7/9.7/8.8/8.8`) gibi ekipmanların tüm eksen puanları 8.4–9.7 arasına sıkıştığı için ham Öklid mesafesi kullanıldığında neredeyse her kahvede aynı 1-2 ekipman birinci çıkar.
+   - **Çözüm:** Korelasyon motorunda her ekipmanın `[acidity, sweetness, body, clarity]` skorlarını popülasyon içi **Min-Max normalizasyonu** ile 0–10 aralığına ger (veya göreceli profil farkını kullan) VE aşağıda tanımlanan **Kategori–Çözünürlük Uyumu (Category Affinity)** katsayısını uygula.
+
+4. **`recipes.json` içindeki `referenceZoneOverride` Kuralına Mutlak Uyum:**
+   - `tetsu_kasuya_4_6` (`referenceZoneOverride: "chemex"`) ve `japanese_iced_flash_brew` (`referenceZoneOverride: "v30Mugen"`) gibi reçetelerde öğütüm bölgesi `equipment.referenceZone` yerine **`recipe.referenceZoneOverride ?? equipment.referenceZone`** olarak alınmalıdır.
+
+---
+
+### 3. MATEMATİKSEL ALGORİTMA VE KORELASYON KURALLARI
+
+#### Adım A — Fiziksel Skalerler ve Bileşik Çözünürlük ($S_{bean}$)
+1. **Rakım Orta Noktası & Varyete Yoğunluğu ($D$):**
+   - `origin.altitude` içindeki sayıları regex ile çekip ortalamasını al (`altMid`).
+   - `origin.varietals` içinden varyete düzeltmesini al:
+     - `/heirloom|kurume|wolisho|jarc|dega/i` → `dMod: +0.06`, `varMicronDelta: +25`, `varTempDelta: 0`
+     - `/peaberry|\bpb\b/i` → `dMod: +0.08`, `varMicronDelta: 0`, `varTempDelta: +1.0`
+     - `/geisha|gesha|sidra|sl28|sl34/i` → `dMod: +0.05`, `varMicronDelta: 0`, `varTempDelta: +0.5`
+     - `/pacamara|maragogype|maracaturra/i` → `dMod: -0.04`, `varMicronDelta: -15`, `varTempDelta: 0`
+     - `/catimor|mundo novo|ateng/i` → `dMod: -0.05`, `varMicronDelta: +10`, `varTempDelta: -1.0`
+   - `D = clamp((altMid - 900) / 1400 + dMod, 0.10, 1.00)`
+2. **Agtron Kavrum Çözünürlüğü ($R$):**
+   - `agtronG = exactAgtronGround ?? getRoastSpec(roastId).agtronMid`
+   - `deltaDev = exactAgtronWhole != null ? agtronG - exactAgtronWhole : 10`
+   - `R = clamp((88 - agtronG) / 53 + Math.max(0, (deltaDev - 15) * 0.008), 0.0, 1.0)`
+3. **Bileşik Çözünürlük İndeksi ($S_{bean}$):**
+   - `S = 0.45 * R + 0.35 * P + 0.20 * (1 - D)`
+
+#### Adım B — Hedef Duyusal Vektör (`[acidity, sweetness, body, clarity]`)
+- `originVec` (Rakımdan türetilen): `[2.8 + 7.0*D, 8.8 - 1.4*D, 9.4 - 5.2*D, 3.2 + 6.6*D]`
+- `roastVec` (Agtron $R$'den türetilen): `[max(1.5, 9.8 - 8.0*R), max(4.5, 9.0 - 11.5*(R - 0.44)^2), min(9.8, 3.2 + 6.5*R), max(1.5, 10.0 - 7.8*R)]`
+- `notesVec`: `origin.defaultNotes` etiketlerinin ortalama vektörü (`floral`, `citrus`, `red_berries`, `stone_fruit`, `tropical_fermented`, `caramel_brown_sugar`, `chocolate_nutty`, `spicy_earthy`).
+- **Bileşik Hedef:**
+  `V_target = 0.24 * originVec + 0.24 * processVec + 0.22 * roastVec + 0.30 * notesVec`
+
+#### Adım C — Ekipman × Reçete Birleşik Korelasyon Skoru
+`CHAMPION_RECIPES` ve `BREWING_EQUIPMENTS` içindeki geçerli tüm `(equipment, recipe)` çiftleri (`recipe.supportedEquipmentIds.includes(equipment.id)`) için şu skoru hesapla ve en yüksekten düşüğe sırala:
+
+1. **Çiftin Birleşik Duyusal Vektörü:**
+   - `V_pair = 0.55 * normalizedEquipVec + 0.45 * recipeVec`
+2. **Ağırlıklı Duyusal Mesafe (`w = [acidity: 0.90, sweetness: 1.00, body: 1.15, clarity: 1.15]`):**
+   - `dist = sqrt( sum(w_k * (V_target[k] - V_pair[k])^2) / 4.2 )`
+   - `baseScore = 100 - 14.0 * dist`
+3. **Fiziksel & Kategori Uyum Bonusu (`categoryBonus`):**
+   - `S <= 0.30` (Açık kavrum + Yıkanmış + Yüksek rakım) → `conical` ekipmanlara `+5`, `flatBottom` ekipmanlara `+2`, `pressurizedTraditionalCold` ekipmanlara `-6` (kullanıcı özellikle filtrelemedikçe açık yıkanmış lota otomatik Moka Pot/Türk Kahvesi çıkmasın).
+   - `0.30 < S <= 0.62` (Honey, Naturel, Anaerobik, Termal Şok, Orta-Açık) → `flatBottom` (`timemore_b75`, `kalita_wave`, `orea_v3_v4`) ve `hario_switch` ekipmanlarına `+5`, `conical` ekipmanlara `+1`.
+   - `S > 0.62` (Orta-Koyu, Koyu, Wet-Hulled, Monsooned, Düşük rakım Brezilya) → `immersionHybrid` (`french_press`, `aeropress`) ve `espresso` / `moka_pot` ekipmanlarına `+6`, `chemex` / `hario_v60`'a `-4`.
+   - **Primary Equipment Uyumu:** `recipe.primaryEquipmentId === equipment.id` ise `+3` bonus.
+4. **Nihai Skor:** `correlationScore = clamp(Math.round(baseScore + categoryBonus), 50, 99)`
+
+#### Adım D — Öğütüm Kalınlığı, Sıcaklık, Oran ve UC Davis RSM Koordinatları
+- **Baz Mikron:** `effectiveZone = recipe.referenceZoneOverride ?? equipment.referenceZone` üzerinden `REFERENCE_GRIND_MATRIX` tablosundaki baz mikron aralığının orta noktasını (`baseMicron`) al.
+- **Nihai Mikron:**
+  - `solubilityDelta = (S - 0.50) * 110`
+  - `doseDelta = (doseGrams - 18) * 6` (Türk kahvesi ve Espresso'da `0` tut)
+  - `burrDelta = grinder.burrType === 'flat' ? -20 : 0` (Eureka Mignon Filtro, Fellow Ode, EK43 düz bıçak avantajı)
+  - `finalMicron = Math.round(baseMicron + solubilityDelta + varMicronDelta + doseDelta + burrDelta)`
+- **Değirmen Ayarı:** `grinder_matrix.json` / `grinders.json` içindeki seçili değirmenin adım katsayısıyla `finalMicron` değerini gerçek kadran/klik metnine çevir.
+- **Su Sıcaklığı:**
+  - `turkish_cezve` için `60°C` başlangıç, `cold_brew_iced` (Cold Brew) için `20°C` istisnasını koru; diğer tüm sıcak demlemelerde:
+  - `waterTempC = clamp(Math.round((recipe.baseWaterTempC + (96.5 - 9.5 * S)) / 2 + varTempDelta), 85, 97)`
+- **Adım Ölçeklendirme (`scaledSteps`):** `scaleFactor = doseGrams / recipe.baseCoffeeGrams` ile `waterAddedGrams` ve `cumulativeWaterGrams` değerlerini tam sayıya yuvarlayarak güncelle.
+- **UC Davis RSM Hedef Bölgesi (SCA Issue 13):**
+  - `V_target.sweetness >= 8.5` ve `S >= 0.45` ise: *"Sol-Alt Doğal Tatlılık Bölgesi (Düşük-Orta TDS %1.18–1.26, %18.8–19.8 PE)"*
+  - `V_target.body >= 8.2` ve `chocolate_nutty` varsa: *"Sağ-Alt Bitter Çikolata Bölgesi (Kontrollü TDS %1.22–1.30, %20.5–21.8 PE)"*
+  - `V_target.clarity >= 8.5` ve `V_target.acidity >= 8.2` ise: *"Merkez-Üst Parlak Berraklık Bölgesi (%1.22–1.32 TDS, %20.0–21.2 PE)"*
+
+---
+
+### 4. TESLİM EDİLECEKLER VE DOĞRULAMA TESTLERİ
+
+1. `src/types/coffee.ts` ve `src/data/constants.ts` için güncellenmiş tip ve sabitleri ver.
+2. `src/engine/brewRecommendationEngine.ts` dosyasını eksiksiz, tip-güvenli ve yorumlu olarak yaz.
+3. Dosyanın altına şu 3 test senaryosunun beklenen çıktılarını doğrulayan küçük bir birim test bloğu (`__tests__/brewRecommendationEngine.test.ts`) ekle:
+   - `ethiopia_yirgacheffe` + `washed` + `light` → Konik dripper (`hario_v60` / `chemex`), yüksek sıcaklık (~95°C), ince-orta öğütüm.
+   - `colombia_el_paraiso` + `thermal_shock` + `light` → Düz taban / hibrit (`timemore_b75` / `hario_switch`), serinletilmiş sıcaklık (~91–92°C), Sol-Alt RSM tatlılık bölgesi.
+   - `brazil_cerrado` + `natural` + `medium_dark` → İmmersiyon / basınçlı (`french_press` / `aeropress` / `espresso`), düşük sıcaklık (~88°C), kalın öğütüm (veya espresso).
+
+## KOPYALANACAK PROMPT SONU
+---
