@@ -4,8 +4,8 @@
   "version": "0.3.0",
   "versionCode": 20,
   "buildNumber": 20,
-  "commitSha": "376afb6",
-  "builtAt": "2026-11-19T07:45:20.582Z",
+  "commitSha": "a6f62e1",
+  "builtAt": "2026-11-19T09:39:17.060Z",
   "repo": "barissariagac/BrewMaster-release",
   "branch": "main",
   "apkFileName": "brewmaster-v0.3.0.apk",
@@ -15,5 +15,5 @@
   "apkDownloadUrl": "https://raw.githubusercontent.com/barissariagac/BrewMaster-release/main/builds/brewmaster-latest.apk",
   "buildsFolderUrl": "https://github.com/barissariagac/BrewMaster-release/tree/main/builds",
   "releasesUrl": "https://github.com/barissariagac/BrewMaster-release/releases",
-  "notes": "brewmaster-sca-pro v0.3.0 (376afb6) Android APK derlemesi."
+  "notes": "brewmaster-sca-pro v0.3.0 (a6f62e1) Android APK derlemesi."
 }
